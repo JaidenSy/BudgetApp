@@ -1,54 +1,55 @@
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseNotFound
-from django.views import View
-from .models import Item
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponseBadRequest, HttpResponseNotFound, JsonResponse
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .models import Category, Item, UserIncome, UserCategoryBudget
+from .serializers import CategorySerializer, ItemSerializer, UserIncomeSerializer, UserCategoryBudgetSerializer
 
-class ItemApiView(View):
-    def get(self, request, item_id=None):
-        if item_id is None:
-            items = Item.objects.all()
-            data = [{'id': item.id, 'name': item.name, 'price': item.price} for item in items]
-        else:
-            try:
-                item = Item.objects.get(id=item_id)
-                data = {'id': item.id, 'name': item.name, 'price': item.price}
-            except Item.DoesNotExist:
-                return HttpResponseNotFound()
+class CategoryListView(APIView):
+    def get(self, request):
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
 
-        return JsonResponse(data, safe=False)
+class ItemListView(APIView):
+    def get(self, request, category_id):
+        category = get_object_or_404(Category, pk=category_id)
+        items = Item.objects.filter(category=category)
+        serializer = ItemSerializer(items, many=True)
+        return Response(serializer.data)
 
-    def post(self, request):
-        name = request.POST.get('name')
-        price = request.POST.get('price')
+class ItemDetailView(APIView):
+    def get(self, request, item_id):
+        item = get_object_or_404(Item, pk=item_id)
+        serializer = ItemSerializer(item)
+        return Response(serializer.data)
 
-        if name and price:
-            item = Item.objects.create(name=name, price=price)
-            data = {'id': item.id, 'name': item.name, 'price': item.price}
-            return JsonResponse(data)
-        else:
-            return HttpResponseBadRequest()
-
-    def put(self, request, item_id):
-        try:
-            item = Item.objects.get(id=item_id)
-        except Item.DoesNotExist:
-            return HttpResponseNotFound()
-
-        name = request.POST.get('name', item.name)
-        price = request.POST.get('price', item.price)
-
-        item.name = name
-        item.price = price
-        item.save()
-
-        data = {'id': item.id, 'name': item.name, 'price': item.price}
-        return JsonResponse(data)
+    def post(self, request, item_id):
+        item = get_object_or_404(Item, pk=item_id)
+        serializer = ItemSerializer(item, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
 
     def delete(self, request, item_id):
-        try:
-            item = Item.objects.get(id=item_id)
-        except Item.DoesNotExist:
-            return HttpResponseNotFound()
-
+        item = get_object_or_404(Item, pk=item_id)
         item.delete()
-        return JsonResponse({'message': 'Item deleted successfully'})
+        return Response(status=204)
 
+class UserIncomeView(APIView):
+    def post(self, request):
+        serializer = UserIncomeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+class UserBudgetView(APIView):
+    def post(self, request, category_id):
+        category = get_object_or_404(Category, pk=category_id)
+        serializer = UserCategoryBudgetSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
