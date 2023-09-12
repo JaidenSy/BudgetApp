@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <title>Create Budget</title>
+</head>
+<body>
+    <h1>Create Budget</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create</button>
+    </form>
+    <a href="{% url 'budgets' %}">Back to Budgets</a>
+</body>
+
+{% endblock content %}
