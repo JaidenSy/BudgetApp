@@ -1,5 +1,5 @@
 """
-URL configuration for Budgeting project.
+URL configuration for Budget project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.2/topics/http/urls/
@@ -19,6 +19,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("api/", include("BudgetApp.urls")),
-    path('accounts/', include('BudgetApp.urls'))
+    path('budget/', include("App.urls")),
 ]
